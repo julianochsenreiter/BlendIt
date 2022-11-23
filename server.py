@@ -13,6 +13,16 @@ mreq = struct.pack("4sl", socket.inet_aton(MULTICAST_GROUP), socket.INADDR_ANY) 
 serv.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
 print("BlendIt Server has started...")
 
+registered_clients = list()
+
 while True:
-    msg = serv.recv(1024)
-    print(str(msg))
+    msg, sender = serv.recvfrom(1024)
+    cl = sender[0] # get IP address from sender tuple
+
+    print(f"Recieved {msg} from {sender}")
+
+    if cl not in registered_clients:
+        print("New client, adding to list")
+        registered_clients.append(cl)
+    else:
+        print("Client is known!")
