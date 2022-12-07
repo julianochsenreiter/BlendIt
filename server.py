@@ -15,10 +15,8 @@ print("BlendIt Server has started...")
 
 registered_clients = list()
 
-while True:
-    msg, sender = serv.recvfrom(1024)
+def handleMessage(msg, sender):
     cl = sender[0] # get IP address from sender tuple
-
     print(f"Recieved {msg} from {sender}")
 
     if cl not in registered_clients:
@@ -26,3 +24,7 @@ while True:
         registered_clients.append(cl)
     else:
         print("Client is known!")
+
+while True:
+    handleMessage(serv.recvfrom(1024))
+    
