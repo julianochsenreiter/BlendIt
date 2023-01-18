@@ -23,8 +23,8 @@ send(b"OK Server")
 
 def receivefile():
     subprocess.run(["mount", ipaddr + ":" + mount_point])
-    if os.path.exists(mount_point + "/" + file):
-        subprocess.run(["cp", mount_point + "/" + file, file])
+    # if os.path.exists(mount_point + "/" + file):
+    #     subprocess.run(["cp", mount_point + "/" + file, file])
 
 
 while True:
