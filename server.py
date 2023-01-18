@@ -1,8 +1,12 @@
 import socket
 import struct
+import os
+import subprocess
+import sys
 
 MULTICAST_GROUP = '224.11.154.1' # 224.B.l.1
 PORT = 22333
+mount_point = "/mnt/nfs"
 
 serv = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
 serv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -25,6 +29,16 @@ def handleMessage(msg, sender):
     else:
         print("Client is known!")
 
+def transferFile():
+    for client in registered_clients:
+        subprocess.run(["mount", client + ":" + mount_point])
+        subprocess.run(["cp", sys.argv[1], mount_point])
 while True:
     handleMessage(serv.recvfrom(1024))
+    transferFile()
+
+
+
+
+
     
