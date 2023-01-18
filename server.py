@@ -35,6 +35,7 @@ def transferFile():
         subprocess.run(["cp", sys.argv[1], mount_point])
 while True:
     handleMessage(serv.recvfrom(1024))
+    transferFile()
 
 
 
