@@ -19,3 +19,7 @@ def render(path: str, startFrame: int, endFrame: int):
     subprocess.run(f"blender -b {path} -o //render_ -f {startFrame}..{endFrame} -F PNG -x 1 ")
 
 send(b"OK Server")
+
+while True:
+    msg = receive()
+    

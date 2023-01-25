@@ -1,5 +1,6 @@
 import socket
 import struct
+import pyfiglet
 
 MULTICAST_GROUP = '224.11.154.1' # 224.B.l.1
 PORT = 22333
@@ -11,7 +12,10 @@ serv.bind(('', PORT))
 
 mreq = struct.pack("4sl", socket.inet_aton(MULTICAST_GROUP), socket.INADDR_ANY) # turn this into bytes
 serv.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
-print("BlendIt Server has started...")
+
+WELCOME_TEXT = pyfiglet.figlet_format("BLENDIT")
+print(WELCOME_TEXT)
+print("BlendIT server has started...")
 
 registered_clients = list()
 
