@@ -26,6 +26,14 @@ def receivefile():
     # if os.path.exists(mount_point + "/" + file):
     #     subprocess.run(["cp", mount_point + "/" + file, file])
 
+def receive() -> bytes:
+    return cl.recv(32)
+
+def render(path: str, startFrame: int, endFrame: int):
+    subprocess.run(f"blender -b {path} -o //render_ -f {startFrame}..{endFrame} -F PNG -x 1 ")
+
+send(b"OK Server")
 
 while True:
-    receivefile()
+    msg = receive()
+    
