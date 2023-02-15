@@ -30,6 +30,18 @@ def log(msg: str):
     print(msg)
 
 # Socket functions
+
+"""
+Returns tuple of server and message as string
+"""
+def findServer() -> Tuple[str, str]:
+    send(b"Hello")
+
+    msg, sender = receive()
+    return sender, str(msg)
+
+    
+
 def send(msg: bytes):
     log(f"Sending {str(msg)}...")
     cl.sendto(msg, (MULTICAST_GROUP, PORT))
@@ -60,25 +72,25 @@ frame_end = 0
 wantsToExit = False
 
 while not wantsToExit:
-    if len(server_address) == 0:
-        send(b"Hello")                
+    try:
+        if len(server_address) == 0:
+            server_address, file_name = findServer()
+
+        if frame_start != frame_end:
+            render(mount_point + file_name, frame_start, frame_end)
+            send(b"DONE")
+            
+            frame_start = 0
+            frame_end = 0
+
         msg, sender = receive()
-        server_address = sender
-        file_name = str(msg)
-
-    if frame_start != frame_end:
-        render(mount_point + file_name, frame_start, frame_end)
-        send(b"DONE")
+        if sender != server_address:
+            log("Other server tried to contact during session!")
+            continue
         
-        frame_start = 0
-        frame_end = 0
-
-    msg, sender = receive()
-    if sender != server_address:
-        log("Other server tried to contact during session!")
-        continue
-    
-    parts = str(msg).split(';')
-    frame_start = int(parts[0])
-    frame_end = int(parts[1])
+        parts = str(msg).split(';')
+        frame_start = int(parts[0])
+        frame_end = int(parts[1])
+    except KeyboardInterrupt:
+        wantsToExit = True
     
