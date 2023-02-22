@@ -49,6 +49,17 @@ def getFrameLength() -> int:
 
     return int(frames)
 
+def calculateFrameRange() -> Tuple[int, int]:
+    frames = getFrameLength()
+    perclient = frames / registered_clients.count
+    end = 0
+    while (end < frames):
+        start = end
+        end += perclient
+        if end > frames:
+            end = frames
+    return start, end
+
 # Socket functions
 def receive() -> Tuple[bytes, str]:
     return serv.recvfrom(512)
