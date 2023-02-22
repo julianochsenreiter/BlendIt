@@ -6,6 +6,9 @@ import sys
 from typing import Tuple
 import pyfiglet
 import asyncio
+import cv2
+
+# pip install opencv-python-headless
 
 """
     INIT
@@ -19,8 +22,9 @@ MULTICAST_GROUP = '224.11.154.1' # 224.B.l.1
 PORT = 22333
 
 # Setup mount info
-mount_point = "/mnt/nfs"
+MOUNT_POINT = "/mnt/nfs/blendit"
 FILE_PATH = sys.argv[1]
+VIDEO_PATH = "output.avi"
 
 # Create socket
 serv = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
@@ -49,17 +53,6 @@ def getFrameLength() -> int:
 
     return int(frames)
 
-def calculateFrameRange() -> Tuple[int, int]:
-    frames = getFrameLength()
-    perclient = frames / registered_clients.count
-    end = 0
-    while (end < frames):
-        start = end
-        end += perclient
-        if end > frames:
-            end = frames
-    return start, end
-
 # Socket functions
 def receive() -> Tuple[bytes, str]:
     return serv.recvfrom(512)
@@ -78,13 +71,26 @@ async def handleMessage(msg, sender):
 
 
 def transferFile(client: str):
-    subprocess.run(["mount", client + ":" + mount_point])
-    subprocess.run(["cp", FILE_PATH, mount_point])
+    subprocess.run(["mount", client + ":" + MOUNT_POINT])
+    subprocess.run(["cp", FILE_PATH, MOUNT_POINT])
 
-    serv.sendto(mount_point + FILE_PATH)
+    serv.sendto(MOUNT_POINT + FILE_PATH)
 
 def sendFrameRange(client: str, start: int, end: int):
     serv.sendto(f"{start};{end}",client)
+
+def combineImages():
+    images = [img for img in os.listdir(MOUNT_POINT) if img.endswith(".png")]
+    frame = cv2.imread(os.path.join(MOUNT_POINT, images[0]))
+    height, width, layers = frame.shape
+
+    video = cv2.VideoWriter(VIDEO_PATH, 0, 1, (width,height))
+
+    for image in images:
+        video.write(cv2.imread(os.path.join(MOUNT_POINT, image)))
+    
+    cv2.destroyAllWindows()
+    video.release()
 
 """
     MAIN LOOP
