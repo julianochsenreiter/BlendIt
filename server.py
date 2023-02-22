@@ -17,6 +17,7 @@ if sys.argv.count < 2:
 # Setup connection Info
 MULTICAST_GROUP = '224.11.154.1' # 224.B.l.1
 PORT = 22333
+framesdict = {}
 
 # Setup mount info
 mount_point = "/mnt/nfs"
@@ -58,7 +59,15 @@ def calculateFrameRange() -> Tuple[int, int]:
         end += perclient
         if end > frames:
             end = frames
-    return start, end
+        start_frame = start
+        end_frame = end
+
+        for client in registered_clients:
+            sendFrameRange(client, start_frame, end_frame)
+            framesdict[client] = (start_frame, end_frame)
+
+
+    return start_frame, end_frame
 
 # Socket functions
 def receive() -> Tuple[bytes, str]:
