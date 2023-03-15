@@ -26,7 +26,7 @@ FILE_PATH = sys.argv[1]
 # Create socket
 serv = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
 serv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-serv.bind(('', PORT))
+serv.bind((MULTICAST_GROUP, PORT))
 
 # Enable multicast
 mreq = struct.pack("4sl", socket.inet_aton(MULTICAST_GROUP), socket.INADDR_ANY) # turn this into bytes
