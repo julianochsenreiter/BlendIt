@@ -10,7 +10,7 @@ import asyncio
 """
     INIT
 """
-if sys.argv.count < 2:
+if len(sys.argv) < 2:
     print("You need to specify a .blend file to render!")
     sys.exit(1)
 
@@ -63,7 +63,6 @@ def calculateFrameRange() -> Tuple[int, int]:
         end_frame = end
 
         for client in registered_clients:
-            sendFrameRange(client, start_frame, end_frame)
             framesdict[client] = (start_frame, end_frame)
 
 
