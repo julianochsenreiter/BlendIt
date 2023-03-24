@@ -14,14 +14,18 @@ if len(sys.argv) < 2:
     print("You need to specify a .blend file to render!")
     sys.exit(1)
 
+if os.getuid() != 0:
+    print("")
+
 # Setup connection Info
 MULTICAST_GROUP = '224.11.154.1' # 224.B.l.1
 PORT = 22333
 framesdict = {}
 
 # Setup mount info
-mount_point = "/mnt/nfs"
-FILE_PATH = sys.argv[1]
+MOUNT_POINT = "./data"
+CLIENT_MOUNT_POINT = "var/blendit/"
+filePath = sys.argv[1]
 
 # Create socket
 serv = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
@@ -44,7 +48,7 @@ registered_clients = list()
 
 # Render functions
 def getFrameLength() -> int: 
-    output = subprocess.check_output(["blender", "-b", FILE_PATH , "-P", "./getdata.py"])
+    output = subprocess.check_output(["blender", "-b", filePath , "-P", "./getdata.py"])
     frames = str.split(str(output), "\\r")[0].removeprefix("b'")
     print(f"Output: {frames}")
 
@@ -86,10 +90,13 @@ async def handleMessage(msg, sender):
 
 
 def transferFile(client: str):
-    subprocess.run(["mount", client + ":" + mount_point])
-    subprocess.run(["cp", FILE_PATH, mount_point])
+    
 
-    serv.sendto(mount_point + FILE_PATH)
+    address = client[0]
+    subprocess.run(["mount", "-t", "nfs", f"{address}:{CLIENT_MOUNT_POINT}", MOUNT_POINT])
+    subprocess.run(["cp", filePath, MOUNT_POINT])
+
+    serv.sendto(bytes(f"{filePath}{MOUNT_POINT}", encoding="UTF8"), client)
 
 def sendFrameRange(client: str, start: int, end: int):
     serv.sendto(f"{start};{end}",client)
