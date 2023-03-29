@@ -14,7 +14,7 @@ PORT = 22333
 hostname = socket.gethostname()
 ipaddr = socket.gethostbyname(hostname)
 TTL = 2
-CLIENT_MOUNT_POINT = "var/blendit/"
+CLIENT_MOUNT_POINT = "/var/blendit/"
 MOUNT_POINT = "./data"	
 subprocess.run(["mkdir", "-p", CLIENT_MOUNT_POINT])
 

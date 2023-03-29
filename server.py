@@ -25,7 +25,7 @@ framesdict = {}
 # Setup mount info
 MOUNT_POINT = "./data"
 subprocess.run(["mkdir", "-p", MOUNT_POINT])
-CLIENT_MOUNT_POINT = "var/blendit/"
+CLIENT_MOUNT_POINT = "/var/blendit/"
 filePath = sys.argv[1]
 
 # Create socket
