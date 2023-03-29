@@ -97,5 +97,5 @@ while not wantsToExit:
         frame_end = int(parts[1])
     except KeyboardInterrupt:
         wantsToExit = True
-        subprocess.run(["umount", CLIENT_MOUNT_POINT])
+        # # subprocess.run(["umount", CLIENT_MOUNT_POINT])
     
