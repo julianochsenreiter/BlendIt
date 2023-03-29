@@ -94,7 +94,8 @@ def transferFile(client: str):
     
 
     address = client[0]
-    subprocess.run(["mount", "-t", "nfs", f"{address}:{CLIENT_MOUNT_POINT}", MOUNT_POINT])
+    subprocess.run(["mount", "-t", "nfs", f"{address}:{MOUNT_POINT}"])
+    # # subprocess.run(["mount", "-t", "nfs", f"{address}:{CLIENT_MOUNT_POINT}", MOUNT_POINT])
     subprocess.run(["cp", filePath, MOUNT_POINT])
 
     serv.sendto(bytes(f"{filePath}{MOUNT_POINT}", encoding="UTF8"), client)
