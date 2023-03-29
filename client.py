@@ -14,9 +14,13 @@ PORT = 22333
 hostname = socket.gethostname()
 ipaddr = socket.gethostbyname(hostname)
 TTL = 2
+CLIENT_MOUNT_POINT = "var/blendit/"
+MOUNT_POINT = "~/data"	
+subprocess.run(["mkdir", "-p", CLIENT_MOUNT_POINT])
+
 
 # Mount info
-mount_point = "/etc/nfs"
+# # mount_point = "/etc/nfs"
 file_extension = "*.blend"
 
 # Create socket
@@ -47,7 +51,7 @@ def send(msg: bytes):
     cl.sendto(msg, (MULTICAST_GROUP, PORT))
 
 def receivefile():
-    subprocess.run(["mount", ipaddr + ":" + mount_point])
+    subprocess.run(["mount", "-t", "nfs", f"{server_address}:{MOUNT_POINT}", CLIENT_MOUNT_POINT])
     # if os.path.exists(mount_point + "/" + file):
     #     subprocess.run(["cp", mount_point + "/" + file, file])
 
@@ -77,7 +81,7 @@ while not wantsToExit:
             server_address, file_name = findServer()
 
         if frame_start != frame_end:
-            render(mount_point + file_name, frame_start, frame_end)
+            render(CLIENT_MOUNT_POINT + file_name, frame_start, frame_end)
             send(b"DONE")
             
             frame_start = 0
@@ -93,4 +97,5 @@ while not wantsToExit:
         frame_end = int(parts[1])
     except KeyboardInterrupt:
         wantsToExit = True
+        subprocess.run(["umount", CLIENT_MOUNT_POINT])
     
