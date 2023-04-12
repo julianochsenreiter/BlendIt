@@ -1,122 +1,103 @@
 import socket
-import struct
-import os
+import os 
 import subprocess
 import sys
 from typing import Tuple
-import pyfiglet
-import asyncio
 
 """
     INIT
 """
-if len(sys.argv) < 2:
-    print("You need to specify a .blend file to render!")
-    sys.exit(1)
 
-if os.getuid() != 0:
-    print("")
-
-# Setup connection Info
-MULTICAST_GROUP = '224.11.154.1' # 224.B.l.1
+# Connection info
+MULTICAST_GROUP = '224.11.154.1'
 PORT = 22333
-framesdict = {}
+hostname = socket.gethostname()
+ipaddr = socket.gethostbyname(hostname)
+TTL = 2
+# CLIENT_MOUNT_POINT = "/var/blendit/"
+# MOUNT_POINT = "/data"	
+# subprocess.run(["mkdir", "-p", CLIENT_MOUNT_POINT])
 
-# Setup mount info
-MOUNT_POINT = "/data"
-#subprocess.run(["mkdir", "-p", MOUNT_POINT])
-#CLIENT_MOUNT_POINT = "/var/blendit/"
-filePath = sys.argv[1]
+
+# Mount info
+# # mount_point = "/etc/nfs"
+file_extension = "*.blend"
 
 # Create socket
-serv = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-serv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-serv.bind((MULTICAST_GROUP, PORT))
-
-# Enable multicast
-mreq = struct.pack("4sl", socket.inet_aton(MULTICAST_GROUP), socket.INADDR_ANY) # turn this into bytes
-serv.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
-
-WELCOME_TEXT = pyfiglet.figlet_format("BLENDIT")
-print(WELCOME_TEXT)
-print("BlendIT server has started...")
-
-registered_clients = list()
+cl = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
 
 """
     FUNCTIONS
 """
-
-# Render functions
-def getFrameLength() -> int: 
-    output = subprocess.check_output(["blender", "-b", filePath , "-P", "./getdata.py"])
-    frames = str.split(str(output), "\\r")[0].removeprefix("b'")
-    print(f"Output: {frames}")
-
-    return int(frames)
-
-def calculateFrameRange() -> Tuple[int, int]:
-    frames = getFrameLength()
-    perclient = frames / registered_clients.count
-    end = 0
-    while (end < frames):
-        start = end
-        end += perclient
-        if end > frames:
-            end = frames
-        start_frame = start
-        end_frame = end
-
-        for client in registered_clients:
-            framesdict[client] = (start_frame, end_frame)
-
-
-    return start_frame, end_frame
+# Util functions
+def log(msg: str):
+    print(msg)
 
 # Socket functions
-def receive() -> Tuple[bytes, str]:
-    return serv.recvfrom(512)
 
-async def handleMessage(msg, sender):
-    cl = sender[0] # get IP address from sender tuple
-    print(f"Recieved {msg} from {sender}")
+"""
+Returns tuple of server and message as string
+"""
+def findServer() -> Tuple[str, str]:
+    send(b"Hello")
 
-    if cl not in registered_clients:
-        print("New client, adding to list")
-        registered_clients.append(cl)
-        transferFile(sender)
-        sendFrameRange(sender, 1, 10)
-    else:
-        print("Client is known!")
+    msg, sender = receive()
+    return sender, str(msg)
+
     
 
+def send(msg: bytes):
+    log(f"Sending {str(msg)}...")
+    cl.sendto(msg, (MULTICAST_GROUP, PORT))
 
-def transferFile(client: str):
-    print("transferFile")
+def receivefile():
+	print("recievefile")
+    # subprocess.run(["mount", "-t", "nfs", f"{server_address}:{MOUNT_POINT}", CLIENT_MOUNT_POINT])
+    # if os.path.exists(mount_point + "/" + file):
+    #     subprocess.run(["cp", mount_point + "/" + file, file])
 
-    address = client[0]
-#    subprocess.run(["mount", "-t", "nfs", f"{address}:{MOUNT_POINT}"])
-    # # subprocess.run(["mount", "-t", "nfs", f"{address}:{CLIENT_MOUNT_POINT}", MOUNT_POINT])
-#    subprocess.run(["cp", filePath, MOUNT_POINT])
+def receive() -> Tuple[bytes,str]:
+    return cl.recvfrom(512)
 
-    serv.sendto(bytes(f"{filePath}{MOUNT_POINT}", encoding="UTF8"), client)
+# Render functions
+def render(path: str, startFrame: int, endFrame: int):
+	log(f"render {path} {startFrame} {endFrame}")
+	# subprocess.run(f"blender -b {path} -o //render_ -f {startFrame}..{endFrame} -F PNG -x 1 ")
 
-def sendFrameRange(client: str, start: int, end: int):
-    serv.sendto(bytearray(f"{start};{end}"),client)
 
 """
     MAIN LOOP
 """
 
-def main():
-    while True:
+# Server information
+server_address = ""
+file_name = ""
+frame_start = 0
+frame_end = 0
+
+wantsToExit = False
+
+while not wantsToExit:
+    try:
+        if len(server_address) == 0:
+            server_address, file_name = findServer()
+
+        if frame_start != frame_end:
+            render(CLIENT_MOUNT_POINT + file_name, frame_start, frame_end)
+            send(b"DONE")
+            
+            frame_start = 0
+            frame_end = 0
+
         msg, sender = receive()
-        asyncio.run(handleMessage(msg, sender))
+        if sender != server_address:
+            log("Other server tried to contact during session!")
+            continue
         
-
-
-if __name__ == "__main__":
-    main()
-
-
+        parts = str(msg).split(';')
+        frame_start = int(parts[0])
+        frame_end = int(parts[1])
+    except KeyboardInterrupt:
+        wantsToExit = True
+        # # subprocess.run(["umount", CLIENT_MOUNT_POINT])
     
