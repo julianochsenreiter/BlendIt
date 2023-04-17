@@ -14,13 +14,13 @@ PORT = 22333
 hostname = socket.gethostname()
 ipaddr = socket.gethostbyname(hostname)
 TTL = 2
-# CLIENT_MOUNT_POINT = "/var/blendit/"
-# MOUNT_POINT = "/data"	
-# subprocess.run(["mkdir", "-p", CLIENT_MOUNT_POINT])
+CLIENT_MOUNT_POINT = "/home/5ahitn/blenditfiles/"
+MOUNT_POINT = "/var/blendit"
+subprocess.run(["mkdir", "-p", CLIENT_MOUNT_POINT])
 
 
 # Mount info
-# # mount_point = "/etc/nfs"
+# mount_point = "/etc/nfs"
 file_extension = "*.blend"
 
 # Create socket
@@ -51,18 +51,16 @@ def send(msg: bytes):
     cl.sendto(msg, (MULTICAST_GROUP, PORT))
 
 def receivefile():
-	print("recievefile")
-    # subprocess.run(["mount", "-t", "nfs", f"{server_address}:{MOUNT_POINT}", CLIENT_MOUNT_POINT])
-    # if os.path.exists(mount_point + "/" + file):
-    #     subprocess.run(["cp", mount_point + "/" + file, file])
+    print("recievefile")
+    subprocess.run(["mount", "-t", "nfs", f"{server_address}:{MOUNT_POINT}", CLIENT_MOUNT_POINT])
 
 def receive() -> Tuple[bytes,str]:
     return cl.recvfrom(512)
 
 # Render functions
 def render(path: str, startFrame: int, endFrame: int):
-	log(f"render {path} {startFrame} {endFrame}")
-	# subprocess.run(f"blender -b {path} -o //render_ -f {startFrame}..{endFrame} -F PNG -x 1 ")
+    log(f"render {path} {startFrame} {endFrame}")
+    subprocess.run(f"blender -b {path} -o //render_ -f {startFrame}..{endFrame} -F PNG -x 1 ")
 
 
 """
@@ -82,6 +80,7 @@ while not wantsToExit:
         if len(server_address) == 0:
             server_address, file_name = findServer()
 
+        print("Server Found")
         if frame_start != frame_end:
             render(CLIENT_MOUNT_POINT + file_name, frame_start, frame_end)
             send(b"DONE")
@@ -93,11 +92,12 @@ while not wantsToExit:
         if sender != server_address:
             log("Other server tried to contact during session!")
             continue
+        print("received message")
         
         parts = str(msg).split(';')
         frame_start = int(parts[0])
         frame_end = int(parts[1])
     except KeyboardInterrupt:
         wantsToExit = True
-        # # subprocess.run(["umount", CLIENT_MOUNT_POINT])
+        # subprocess.run(["umount", CLIENT_MOUNT_POINT])
     
