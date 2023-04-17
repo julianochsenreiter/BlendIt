@@ -93,25 +93,19 @@ async def handleMessage(msg, sender):
 
 
 def transferFile(client: str):
-    
-
-    address = client[0]
-    # subprocess.run(["mount", "-t", "nfs", f"{address}:{MOUNT_POINT}"])
-    # # subprocess.run(["mount", "-t", "nfs", f"{address}:{CLIENT_MOUNT_POINT}", MOUNT_POINT])
     subprocess.run(["cp", filePath, MOUNT_POINT])
-
     serv.sendto(bytes(f"{filePath}{MOUNT_POINT}", encoding="UTF8"), client)
 
 def sendFrameRange(client: str, start: int, end: int):
-    serv.sendto(f"{start};{end}",client)
+    serv.sendto(bytes(f"{start};{end}"),client)
 
 """
     MAIN LOOP
 """
 
 def main():
-    asyncio.run(receiveLoop())
-    asyncio.run(distributeFrames()) 
+    receiveLoop()
+    distributeFrames()
 
 
 async def receiveLoop():
@@ -142,6 +136,9 @@ async def updateClientFrameRange(client: str):
     
 
 def quit():
+    for client in registered_clients:
+        serv.sendto(b"QUIT", client)
+
     print("Done rendering")
     sys._exit(0)
 

@@ -1,3 +1,4 @@
+import asyncio
 import socket
 import os 
 import subprocess
@@ -44,8 +45,6 @@ def findServer() -> Tuple[str, str]:
     msg, sender = receive()
     return sender, str(msg)
 
-    
-
 def send(msg: bytes):
     log(f"Sending {str(msg)}...")
     cl.sendto(msg, (MULTICAST_GROUP, PORT))
@@ -72,11 +71,17 @@ server_address = ""
 file_name = ""
 frame_start = 0
 frame_end = 0
+  
+"""
+    MAIN LOOP
+"""
 
-wantsToExit = False
 
-while not wantsToExit:
-    try:
+def main():
+    mainLoop()
+
+async def mainLoop():
+    while True:
         if len(server_address) == 0:
             server_address, file_name = findServer()
 
@@ -93,11 +98,18 @@ while not wantsToExit:
             log("Other server tried to contact during session!")
             continue
         print("received message")
+
+        if msg == b"QUIT":
+            quit()
         
         parts = str(msg).split(';')
         frame_start = int(parts[0])
         frame_end = int(parts[1])
-    except KeyboardInterrupt:
-        wantsToExit = True
-        # subprocess.run(["umount", CLIENT_MOUNT_POINT])
-    
+
+def quit():
+    subprocess.run(["umount", CLIENT_MOUNT_POINT])
+    log("Finished all rendering, connection closed.")
+    sys._exit(0)
+
+if __name__ == "__main__":
+    main()
