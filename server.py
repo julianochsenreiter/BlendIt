@@ -23,9 +23,9 @@ PORT = 22333
 framesdict = {}
 
 # Setup mount info
-MOUNT_POINT = "/data"
+MOUNT_POINT = "/var/blendit"
 subprocess.run(["mkdir", "-p", MOUNT_POINT])
-CLIENT_MOUNT_POINT = "/var/blendit/"
+# CLIENT_MOUNT_POINT = "/var/blendit/"
 filePath = sys.argv[1]
 
 # Create socket
@@ -43,6 +43,9 @@ print("BlendIT server has started...")
 
 registered_clients = list()
 
+dictclients = {}
+
+
 """
     FUNCTIONS
 """
@@ -58,18 +61,9 @@ def getFrameLength() -> int:
 def calculateFrameRange() -> Tuple[int, int]:
     frames = getFrameLength()
     perclient = frames / registered_clients.count
-    end = 0
-    while (end < frames):
-        start = end
-        end += perclient
-        if end > frames:
-            end = frames
-        start_frame = start
-        end_frame = end
-
-        for client in registered_clients:
-            framesdict[client] = (start_frame, end_frame)
-
+    
+    start_frame = framedict[max(framedict)]
+    end_frame = start_frame + perclient
 
     return start_frame, end_frame
 
@@ -85,6 +79,10 @@ async def handleMessage(msg, sender):
         print("New client, adding to list")
         registered_clients.append(cl)
         transferFile(sender)
+
+    else if msg == b"DONE":
+       updateClientFrameRange(sender) 
+
     else:
         print("Client is known!")
     
@@ -94,7 +92,7 @@ def transferFile(client: str):
     
 
     address = client[0]
-    subprocess.run(["mount", "-t", "nfs", f"{address}:{MOUNT_POINT}"])
+    # subprocess.run(["mount", "-t", "nfs", f"{address}:{MOUNT_POINT}"])
     # # subprocess.run(["mount", "-t", "nfs", f"{address}:{CLIENT_MOUNT_POINT}", MOUNT_POINT])
     subprocess.run(["cp", filePath, MOUNT_POINT])
 
@@ -108,11 +106,29 @@ def sendFrameRange(client: str, start: int, end: int):
 """
 
 def main():
+    asyncio.run(receiveLoop())
+    asyncio.run(distributeFrames()) 
+
+
+async def receiveLoop():
     while True:
         msg, sender = receive()
         asyncio.run(handleMessage(msg, sender))
-        
 
+async def distributeFrames():
+    for client in registered_clients:
+        if not client in framesdict:
+            asyncio.run(updateClientFrameRange(client))
+
+async def updateClientFrameRange(client: str):
+    frame_start, frame_end = calculateFrameRange()
+    framesdict[client] = (frame_start, frame_end)
+    sendFrameRange(client, frame_start, frame_end)
+    
+
+def quit():
+    print("Done rendering")
+    sys._exit(0)
 
 if __name__ == "__main__":
     main()
