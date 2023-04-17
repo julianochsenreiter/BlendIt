@@ -20,7 +20,6 @@ if os.getuid() != 0:
 # Setup connection Info
 MULTICAST_GROUP = '224.11.154.1' # 224.B.l.1
 PORT = 22333
-framesdict = {}
 
 # Setup mount info
 MOUNT_POINT = "/var/blendit"
@@ -43,7 +42,7 @@ print("BlendIT server has started...")
 
 registered_clients = list()
 
-dictclients = {}
+framedict = {}
 
 
 """
@@ -64,6 +63,11 @@ def calculateFrameRange() -> Tuple[int, int]:
     
     start_frame = framedict[max(framedict)]
     end_frame = start_frame + perclient
+    if end_frame > frames:
+        end_frame = frames
+
+    if start_frame > frames:
+        return (-1, -1)
 
     return start_frame, end_frame
 
@@ -80,7 +84,7 @@ async def handleMessage(msg, sender):
         registered_clients.append(cl)
         transferFile(sender)
 
-    else if msg == b"DONE":
+    elif msg == b"DONE":
        updateClientFrameRange(sender) 
 
     else:
@@ -116,14 +120,25 @@ async def receiveLoop():
         asyncio.run(handleMessage(msg, sender))
 
 async def distributeFrames():
+    allInvalid = True
     for client in registered_clients:
-        if not client in framesdict:
+        if not client in framedict:
             asyncio.run(updateClientFrameRange(client))
+            allInvalid = False
+        elif framedict[client]:
+            allInvalid = False
+    
+    if allInvalid:
+        quit()
+        
 
 async def updateClientFrameRange(client: str):
     frame_start, frame_end = calculateFrameRange()
-    framesdict[client] = (frame_start, frame_end)
-    sendFrameRange(client, frame_start, frame_end)
+    if frame_start == -1:
+        framedict[client] = (-1,-1)
+    else:
+        framedict[client] = (frame_start, frame_end)
+        sendFrameRange(client, frame_start, frame_end)
     
 
 def quit():
