@@ -104,29 +104,35 @@ def sendFrameRange(client: str, start: int, end: int):
 """
 
 def main():
-    receiveLoop()
-    distributeFrames()
+    loop = asyncio.get_event_loop()
+    loop.create_task(receiveLoop())
+    loop.create_task(distributeFrames())
+    loop.run_forever()
 
 
 async def receiveLoop():
     while True:
         msg, sender = receive()
-        asyncio.run(handleMessage(msg, sender))
+        await handleMessage(msg, sender)
 
 async def distributeFrames():
-    allInvalid = True
-    for client in registered_clients:
-        if not client in framedict:
-            asyncio.run(updateClientFrameRange(client))
-            allInvalid = False
-        elif framedict[client]:
-            allInvalid = False
-    
-    if allInvalid:
-        quit()
+    while True:
+        allInvalid = True
+        for client in registered_clients:
+            if not client in framedict:
+                await updateClientFrameRange(client)
+                allInvalid = False
+            elif framedict[client]:
+                allInvalid = False
+            else:
+                print(f"{client} vs {registered_clients}")
+        
+        if allInvalid:
+            quit()
         
 
 async def updateClientFrameRange(client: str):
+    print(f"updateClientFrameRange {client}")
     frame_start, frame_end = calculateFrameRange()
     if frame_start == -1:
         framedict[client] = (-1,-1)
@@ -140,7 +146,7 @@ def quit():
         serv.sendto(b"QUIT", client)
 
     print("Done rendering")
-    sys._exit(0)
+    sys.exit(0)
 
 if __name__ == "__main__":
     main()
