@@ -24,8 +24,10 @@ PORT = 22333
 # Setup mount info
 MOUNT_POINT = "/var/blendit"
 subprocess.run(["mkdir", "-p", MOUNT_POINT])
-# CLIENT_MOUNT_POINT = "/var/blendit/"
 filePath = sys.argv[1]
+framerate = 60
+if len(sys.argv) < 3:
+    framerate = int(sys.argv[2])
 
 # Create socket
 serv = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
@@ -85,19 +87,23 @@ async def handleMessage(msg, sender):
         transferFile(sender)
 
     elif msg == b"DONE":
+       start_frame, end_frame = framedict[cl]
+       print(f"Client {cl} finished frames {start_frame}-{end_frame}, assigning new frame range")
        updateClientFrameRange(sender) 
 
     else:
         print("Client is known!")
-    
-
 
 def transferFile(client: str):
     subprocess.run(["cp", filePath, MOUNT_POINT])
     serv.sendto(bytes(f"{filePath}{MOUNT_POINT}", encoding="UTF8"), client)
 
 def sendFrameRange(client: str, start: int, end: int):
-    serv.sendto(bytes(f"{start};{end}"),client)
+    serv.sendto(bytes(f"{start};{end}", encoding="UTF8"),client)
+
+def combineImages():
+    print("Combining images...")
+    subprocess.run(["ffmpeg", "-framerate", str(framerate), "-pattern_type", "glob",  "-i", MOUNT_POINT + "'*.png'", "render.mp4"])
 
 """
     MAIN LOOP
@@ -146,6 +152,9 @@ def quit():
         serv.sendto(b"QUIT", client)
 
     print("Done rendering")
+    combineImages()
+    print("Done combining images")
+
     sys.exit(0)
 
 if __name__ == "__main__":

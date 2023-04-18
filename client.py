@@ -49,13 +49,13 @@ def send(msg: bytes):
     log(f"Sending {str(msg)}...")
     cl.sendto(msg, (MULTICAST_GROUP, PORT))
 
-def receivefile():
-    print("recievefile")
-    subprocess.run(["mount", "-t", "nfs", f"{server_address}:{MOUNT_POINT}", CLIENT_MOUNT_POINT])
-
 def receive() -> Tuple[bytes,str]:
     print("receive")
     return cl.recvfrom(512)
+
+def mountfile(server: str):
+    print("mount file")
+    subprocess.run(["mount", "-t", "nfs", f"{server}:{MOUNT_POINT}", CLIENT_MOUNT_POINT])
 
 # Render functions
 def render(path: str, startFrame: int, endFrame: int):
@@ -77,6 +77,7 @@ async def main():
     while True:
         if len(server_address) == 0:
             server_address, file_name = await findServer()
+            mountfile(server_address)
 
         print("Server Found")
         if frame_start != frame_end:
