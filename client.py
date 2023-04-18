@@ -39,7 +39,7 @@ def log(msg: str):
 """
 Returns tuple of server and message as string
 """
-def findServer() -> Tuple[str, str]:
+async def findServer() -> Tuple[str, str]:
     send(b"Hello")
 
     msg, sender = receive()
@@ -54,6 +54,7 @@ def receivefile():
     subprocess.run(["mount", "-t", "nfs", f"{server_address}:{MOUNT_POINT}", CLIENT_MOUNT_POINT])
 
 def receive() -> Tuple[bytes,str]:
+    print("receive")
     return cl.recvfrom(512)
 
 # Render functions
@@ -66,24 +67,16 @@ def render(path: str, startFrame: int, endFrame: int):
     MAIN LOOP
 """
 
-# Server information
-server_address = ""
-file_name = ""
-frame_start = 0
-frame_end = 0
-  
-"""
-    MAIN LOOP
-"""
+async def main():
+    # Server information
+    server_address = ""
+    file_name = ""
+    frame_start = 0
+    frame_end = 0
 
-
-def main():
-    mainLoop()
-
-async def mainLoop():
     while True:
         if len(server_address) == 0:
-            server_address, file_name = findServer()
+            server_address, file_name = await findServer()
 
         print("Server Found")
         if frame_start != frame_end:
@@ -109,7 +102,7 @@ async def mainLoop():
 def quit():
     subprocess.run(["umount", CLIENT_MOUNT_POINT])
     log("Finished all rendering, connection closed.")
-    sys._exit(0)
+    sys.exit(0)
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
