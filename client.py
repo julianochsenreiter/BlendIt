@@ -40,7 +40,7 @@ def log(msg: str):
 Returns tuple of server and message as string
 """
 async def findServer() -> Tuple[str, str]:
-    send(b"Hello")
+    send(b"HELLO")
 
     msg, sender = receive()
     return sender, str(msg)

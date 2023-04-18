@@ -99,7 +99,7 @@ def transferFile(client: str):
     serv.sendto(bytes(f"{filePath}{MOUNT_POINT}", encoding="UTF8"), client)
 
 def sendFrameRange(client: str, start: int, end: int):
-    serv.sendto(bytes(f"{start};{end}", encoding="UTF8"),client)
+    serv.sendto(bytes(f"INFO;{start};{end}", encoding="UTF8"),client)
 
 def combineImages():
     print("Combining images...")
